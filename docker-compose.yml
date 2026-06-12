@@ -1,0 +1,21 @@
+---
+services:
+  steam-rom-manager:
+    image: lscr.io/linuxserver/steam-rom-manager:latest
+    container_name: steam-rom-manager
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      # - SRM_CLI= # optional extra Electron / SRM flags
+      # - CUSTOM_USER=user # optional basic-auth user
+      # - PASSWORD=password # optional basic-auth password
+    volumes:
+      - ./config:/config
+      # - /path/to/your/Steam:/steam
+      # - /path/to/your/roms:/roms
+    ports:
+      - 3000:3000
+      - 3001:3001
+    shm_size: "1gb"
+    restart: unless-stopped

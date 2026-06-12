@@ -1,0 +1,3 @@
+#!/bin/bash
+
+/usr/bin/steam-rom-manager --no-sandbox --ozone-platform=wayland --enable-features=UseOzonePlatform,WaylandWindowDecorations ${SRM_CLI}

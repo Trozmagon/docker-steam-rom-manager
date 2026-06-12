@@ -1,0 +1,128 @@
+---
+
+# project information
+project_name: steam-rom-manager
+project_url: "https://steamgriddb.github.io/steam-rom-manager/"
+project_logo: "https://raw.githubusercontent.com/SteamGridDB/steam-rom-manager/master/src/assets/icons/512x512.png"
+project_blurb: "[Steam ROM Manager]({{ project_url }}) (SRM) is a super flexible tool for adding non-Steam games to Steam in bulk and managing their artwork assets and controller templates. Added games could be ROMs for emulators, games from other stores such as Epic or GOG, or even not games at all."
+project_lsio_github_repo_url: "https://github.com/linuxserver/docker-{{ project_name }}"
+project_blurb_optional_extras_enabled: false
+project_categories: "Games"
+# supported architectures
+available_architectures:
+  - {arch: "{{ arch_x86_64 }}", tag: "latest"}
+# development version
+development_versions: false
+# container parameters
+common_param_env_vars_enabled: true
+param_container_name: "{{ project_name }}"
+param_usage_include_vols: true
+param_volumes:
+  - {vol_path: "/config", vol_host_path: "/path/to/{{ project_name }}/config", desc: "Users home directory in the container, stores local files, settings and Steam ROM Manager user data."}
+param_usage_include_ports: true
+param_ports:
+  - {external_port: "3000", internal_port: "3000", port_desc: "Steam ROM Manager desktop gui HTTP must be proxied."}
+  - {external_port: "3001", internal_port: "3001", port_desc: "Steam ROM Manager desktop gui HTTPS."}
+custom_params:
+  - {name: "shm-size", name_compose: "shm_size", value: "1gb", desc: "Recommended for all desktop images, required for the Electron renderer."}
+# optional variables
+opt_param_usage_include_env: true
+opt_param_env_vars:
+  - {env_var: "SRM_CLI", env_value: "", desc: "Specify one or multiple Steam ROM Manager / Electron CLI flags, this string will be passed to the application in full."}
+opt_param_usage_include_vols: true
+opt_param_volumes:
+  - {vol_path: "/steam", vol_host_path: "/path/to/your/Steam", desc: "Mount your host's Steam installation directory here so Steam ROM Manager can write shortcuts and artwork to your local userdata."}
+  - {vol_path: "/roms", vol_host_path: "/path/to/your/roms", desc: "Mount your ROMs / non-Steam game library here so SRM can parse and add them as shortcuts."}
+# Selkies blurb settings
+selkies_blurb: true
+show_nvidia: true
+# application setup block
+app_setup_block_enabled: true
+app_setup_block: |
+  The application can be accessed at:
+
+  * https://yourhost:3001/
+
+  Steam ROM Manager is an Electron application that needs read/write access to a Steam installation to add non-Steam shortcuts and artwork.
+
+  In order for it to do useful work you should bind-mount the directories you want it to manage into the container:
+
+  * `/steam` — bind-mount your host's Steam installation directory (e.g. `~/.steam`, `~/.local/share/Steam`, or `C:\Program Files (x86)\Steam`). When configuring SRM inside the UI, point the **Steam directory** setting at `/steam`.
+  * `/roms` — bind-mount your ROMs / non-Steam game library so SRM can parse it.
+
+  Because Steam itself reads the files SRM writes, make sure Steam is **closed on the host** before you run an "Add" operation in SRM — otherwise Steam will overwrite the new shortcuts on shutdown. After SRM finishes its run, start Steam back up.
+
+  For a full breakdown of how SRM is used, see the [project's documentation](https://steamgriddb.github.io/steam-rom-manager/) and the in-app FAQ.
+# init diagram
+init_diagram: |
+  "steam-rom-manager:latest": {
+    docker-mods
+    base {
+      fix-attr +\nlegacy cont-init
+    }
+    docker-mods -> base
+    legacy-services
+    custom services
+    init-services -> legacy-services
+    init-services -> custom services
+    custom services -> legacy-services
+    legacy-services -> ci-service-check
+    init-migrations -> init-adduser
+    init-os-end -> init-config
+    init-selkies-end -> init-config
+    init-config -> init-config-end
+    init-crontab-config -> init-config-end
+    init-config -> init-crontab-config
+    init-mods-end -> init-custom-files
+    init-adduser -> init-device-perms
+    base -> init-envfile
+    base -> init-migrations
+    init-config-end -> init-mods
+    init-mods-package-install -> init-mods-end
+    init-mods -> init-mods-package-install
+    init-selkies -> init-nginx
+    init-adduser -> init-os-end
+    init-device-perms -> init-os-end
+    init-envfile -> init-os-end
+    init-os-end -> init-selkies
+    init-nginx -> init-selkies-config
+    init-video -> init-selkies-end
+    init-custom-files -> init-services
+    init-selkies-config -> init-video
+    init-services -> svc-cron
+    svc-cron -> legacy-services
+    init-services -> svc-dbus
+    svc-xorg -> svc-dbus
+    svc-dbus -> legacy-services
+    init-services -> svc-de
+    svc-nginx -> svc-de
+    svc-xorg -> svc-de
+    svc-de -> legacy-services
+    init-services -> svc-docker
+    svc-docker -> legacy-services
+    init-services -> svc-nginx
+    svc-nginx -> legacy-services
+    init-services -> svc-pulseaudio
+    svc-pulseaudio -> legacy-services
+    init-services -> svc-selkies
+    svc-dbus -> svc-selkies
+    svc-nginx -> svc-selkies
+    svc-pulseaudio -> svc-selkies
+    svc-xorg -> svc-selkies
+    svc-selkies -> legacy-services
+    init-services -> svc-watchdog
+    svc-watchdog -> legacy-services
+    init-services -> svc-xorg
+    svc-xorg -> legacy-services
+    init-services -> svc-xsettingsd
+    svc-nginx -> svc-xsettingsd
+    svc-xorg -> svc-xsettingsd
+    svc-xsettingsd -> legacy-services
+  }
+  Base Images: {
+    "baseimage-selkies:debiantrixie" <- "baseimage-debian:trixie"
+  }
+  "steam-rom-manager:latest" <- Base Images
+# changelog
+changelogs:
+  - {date: "19.05.26:", desc: "Initial release."}
